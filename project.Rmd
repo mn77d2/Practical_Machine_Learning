@@ -1,0 +1,86 @@
+Practical Machine Learning Project
+===
+
+---
+
+### Abstract
+
+This is the project of practical machine learning class in Cousera.
+The goal of this project is to predict the manner in which a certain person's exercise.
+
+
+The training data for this project are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+
+The test data are available here: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+
+The variable to predict is "classe" variable in the training data.
+
+
+---
+
+### Loading Data
+
+At first, I load the training data and testing data.
+
+```{r message=FALSE}
+library(data.table)
+setwd(dir = "C:/Users/masahiro/Documents/_Practical_Machine_Learning/Project")
+training<-fread("pml-training.csv",na.strings=c("NA","#DIV/0!",""))
+testing<-fread("pml-testing.csv",na.strings=c("NA","#DIV/0!",""))
+```
+
+### Cleaning Data
+
+The raw data is not suitable for machine learning.
+So the data should be cleaned before processing.
+
+The columns in testing data which are not available and same variables in training data will be removed.
+And factor variables whose class is character will be converted to factor class.
+
+```{r message=FALSE}
+### testing data
+testing<-testing[,colSums(is.na(testing))<nrow(testing),with=FALSE]
+testing<-testing[,V1:=NULL]
+testing<-testing[,problem_id:=NULL]
+testing<-testing[,cvtd_timestamp:=NULL]
+testing$user_name<-as.factor(testing$user_name)
+testing$new_window<-as.factor(testing$new_window)
+
+### training data
+training<-training[,c(which(names(training)%in%names(testing)),which(names(training)=="classe")),with=FALSE]
+training$user_name<-as.factor(training$user_name)
+training$new_window<-as.factor(training$new_window)
+training$classe<-as.factor(training$classe)
+```
+
+---
+
+### Training with Cross Validation
+
+I have selected Random Forest algorithm as training method and repeatedcv as cross varidation method.
+
+```{r message=FALSE}
+library(caret)
+set.seed(1235)
+
+modelFit<-train(classe~.,data=training,method="rf",trControl=trainControl(method="repeatedcv",number=3,repeats=1))
+
+modelFit
+```
+
+---
+
+
+### Prediction
+
+Finlally, I predict the classe variable for the each test data.
+
+```{r message=FALSE}
+predict(modelFit,newdata=testing)
+```
+
+---
